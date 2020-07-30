@@ -35,7 +35,13 @@ class App extends React.Component{
       imageUrl : '',
       box: {},
       route:'signin',
-      isSignedIn: false
+      isSignedIn: false,
+      user: {
+        name:'',
+        email:'',
+        entires:0,
+        id:''
+      }
     }
   }
 
@@ -58,11 +64,31 @@ class App extends React.Component{
 
   onInputChange = event => { this.setState( {input : event.target.value} ); }
 
-  onButtonClick = () => {
+  onImageSubmit = () => {
     this.setState({imageUrl : this.state.input});
+
     app.models.predict("a403429f2ddf4b49b307e318f00e528b", 
       this.state.input)
-    .then(response => this.drawBox(this.calculateFaceLocation(response)))
+    .then(response => 
+      {
+        this.drawBox(this.calculateFaceLocation(response));
+
+        fetch('/image',{
+          method:'put',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+                    id: this.state.user.id
+                  })
+        })  
+        .then(resp => resp.json())
+        .then(entryCount => {
+          this.setState(Object.assign(this.state.user, { 
+                            entries:entryCount 
+                          }))
+        })
+        .catch(error => console.log("Error while updating entry count",error));
+
+      })
     .catch(error => console.log("Errored out", error));
 
   }
@@ -76,23 +102,31 @@ class App extends React.Component{
     this.setState({route : name});
   }
 
-  render() {
-    const  {box, imageUrl} = this.state;
+  loadUser = (user) => {
+    console.log("Loading user",user);
+    this.setState(user);
+    console.log(this.state);
+  }
+
+  render() {    
+    const  {box, imageUrl, user} = this.state;
+
+
     return (
     <div className="App">
         <Particles className="particles" params={particleOptions}/>
         <Navigation isSignedIn={ this.state.isSignedIn } onRouteChange={this.onRouteChange}/>
         {
           this.state.route === 'home'
-          ?  <fragment>
+          ?  <React.Fragment>
               <Logo />
-              <Rank />
-              <ImageLinkForm onInputChange={this.onInputChange} onButtonClick={this.onButtonClick}/>
+              <Rank name={user.name} entries={user.entries}/>
+              <ImageLinkForm onInputChange={this.onInputChange} onImageSubmit={this.onImageSubmit}/>
               <FaceRecognition box={imageUrl?box:""} imageUrl={imageUrl}/>
-            </fragment>  
+            </React.Fragment>  
           :(this.state.route === 'signin'
-            ? <Signin onRouteChange = {this.onRouteChange}/> 
-            : <Register onRouteChange = {this.onRouteChange}/>)
+            ? <Signin loadUser={this.loadUser} onRouteChange = {this.onRouteChange}/> 
+            : <Register loadUser={this.loadUser} onRouteChange = {this.onRouteChange}/>)
                  
       }
     </div>

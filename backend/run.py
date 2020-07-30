@@ -1,7 +1,3 @@
-from flask import Flask
+from api import create_app
 
-app = Flask(__name__)
-
-@app.route('/index')
-def home():
-	return {'message':'In home page'}
+app = create_app()

@@ -15,3 +15,13 @@
   right:0;
   left:0;
 }
+
+.errorMsg {
+	color:white;
+	background-color: red;
+}
+
+.successMsg {
+	color:white;
+	background-color: green;
+}
